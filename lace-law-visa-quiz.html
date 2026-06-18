@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UK Visa Eligibility Checker — Lace Law</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-display: 'DM Serif Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --color-black: #000000;
+      --color-white: #FFFFFF;
+      --color-grey-mid: #4A4A4A;
+      --color-grey-light: #F2F2F2;
+      --color-divider: #D1D1D1;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--color-white);
+      color: var(--color-black);
+      font-family: var(--font-body);
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    .quiz-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ── */
+    .quiz-header {
+      padding: 28px 0 20px;
+      border-bottom: 1px solid var(--color-divider);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+      color: var(--color-black);
+      text-decoration: none;
+    }
+    .logo-dot { color: var(--color-grey-mid); }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      padding: 20px 0 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .progress-wrap.visible { opacity: 1; }
+    .progress-label {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-grey-mid);
+      margin-bottom: 8px;
+    }
+    .progress-track {
+      width: 100%;
+      height: 1px;
+      background: var(--color-divider);
+      position: relative;
+    }
+    .progress-fill {
+      height: 1px;
+      background: var(--color-black);
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* ── Screen ── */
+    .screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      padding: 44px 0 48px;
+      animation: fadeUp 0.35s ease both;
+    }
+    .screen.active { display: flex; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Intro screen ── */
+    .intro-eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-grey-mid);
+      margin-bottom: 20px;
+    }
+    .intro-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.6rem, 8vw, 3.8rem);
+      line-height: 1.0;
+      color: var(--color-black);
+      margin-bottom: 24px;
+    }
+    .intro-body {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--color-grey-mid);
+      margin-bottom: 40px;
+      max-width: 400px;
+    }
+    .intro-meta {
+      font-size: 0.75rem;
+      color: var(--color-grey-mid);
+      margin-top: 16px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Question screen ── */
+    .q-eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-grey-mid);
+      margin-bottom: 16px;
+    }
+    .q-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      line-height: 1.1;
+      color: var(--color-black);
+      margin-bottom: 32px;
+    }
+
+    /* ── Answer cards ── */
+    .answers { display: flex; flex-direction: column; gap: 10px; }
+
+    .answer-card {
+      border: 1px solid var(--color-divider);
+      border-radius: 4px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: border-color 0.18s ease, background 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .answer-card:hover {
+      border-color: var(--color-black);
+    }
+    .answer-card.selected {
+      border-color: var(--color-black);
+      background: var(--color-grey-light);
+    }
+    .answer-card-title {
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--color-black);
+    }
+    .answer-card-desc {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-grey-mid);
+      line-height: 1.5;
+    }
+
+    /* ── Navigation ── */
+    .nav-row {
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .btn-primary {
+      background: var(--color-black);
+      color: var(--color-white);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 14px 28px;
+      border: 1px solid var(--color-black);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-primary:hover { background: var(--color-white); color: var(--color-black); }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-primary:disabled:hover { background: var(--color-black); color: var(--color-white); }
+
+    .btn-back {
+      background: transparent;
+      color: var(--color-grey-mid);
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      padding: 14px 0;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .btn-back:hover { color: var(--color-black); }
+
+    /* ── Result screen ── */
+    .result-eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-grey-mid);
+      margin-bottom: 12px;
+    }
+    .result-visa {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 7vw, 3.2rem);
+      line-height: 1.05;
+      color: var(--color-black);
+      margin-bottom: 20px;
+    }
+    .result-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--color-black);
+      margin-bottom: 20px;
+    }
+    .result-description {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--color-grey-mid);
+      margin-bottom: 28px;
+    }
+
+    .result-requirements {
+      background: var(--color-grey-light);
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    .result-req-label {
+      font-family: var(--font-body);
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-grey-mid);
+      margin-bottom: 12px;
+    }
+    .result-req-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .result-req-list li {
+      font-size: 0.875rem;
+      color: var(--color-black);
+      padding-left: 14px;
+      position: relative;
+      line-height: 1.5;
+    }
+    .result-req-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 4px;
+      height: 1px;
+      background: var(--color-black);
+    }
+
+    .btn-whatsapp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: var(--color-black);
+      color: var(--color-white);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 18px 28px;
+      border: 1px solid var(--color-black);
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+      margin-bottom: 12px;
+    }
+    .btn-whatsapp:hover { background: var(--color-white); color: var(--color-black); }
+    .btn-whatsapp svg { flex-shrink: 0; }
+
+    .btn-restart {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: transparent;
+      color: var(--color-grey-mid);
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      padding: 12px;
+      border: 1px solid var(--color-divider);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-restart:hover { border-color: var(--color-black); color: var(--color-black); }
+
+    .result-disclaimer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--color-divider);
+      font-size: 0.72rem;
+      color: var(--color-grey-mid);
+      line-height: 1.6;
+    }
+
+    /* ── Footer ── */
+    .quiz-footer {
+      border-top: 1px solid var(--color-divider);
+      padding: 20px 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-text {
+      font-size: 0.7rem;
+      color: var(--color-grey-mid);
+      letter-spacing: 0.04em;
+    }
+    .footer-link {
+      font-size: 0.7rem;
+      color: var(--color-grey-mid);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .footer-link:hover { color: var(--color-black); }
+  </style>
+</head>
+<body>
+
+<div class="quiz-wrapper">
+
+  <!-- Header -->
+  <header class="quiz-header">
+    <span class="logo">Lace Law<span class="logo-dot">.</span></span>
+    <span class="footer-text" style="font-size:0.68rem;">lacelaw.co.uk</span>
+  </header>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label" id="progressLabel">Question 1 of 3</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: Intro -->
+  <div class="screen active" id="screen-intro">
+    <p class="intro-eyebrow">Visa Eligibility Checker</p>
+    <h1 class="intro-title">Find your UK visa path.</h1>
+    <p class="intro-body">Answer 3 quick questions and we'll point you toward the right UK visa — and what you need to apply.</p>
+    <button class="btn-primary" onclick="startQuiz()">Start — it takes 60 seconds</button>
+    <p class="intro-meta">Free. No personal data collected.</p>
+  </div>
+
+  <!-- SCREEN: Q1 — Goal -->
+  <div class="screen" id="screen-q1">
+    <p class="q-eyebrow">Question 1 of 3</p>
+    <h2 class="q-title">What is your main goal in the UK?</h2>
+    <div class="answers" id="answers-q1">
+      <div class="answer-card" onclick="selectAnswer('q1','work',this)">
+        <span class="answer-card-title">Work for a company</span>
+        <span class="answer-card-desc">I have or am seeking a job offer from a UK employer</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q1','study',this)">
+        <span class="answer-card-title">Study or continue my education</span>
+        <span class="answer-card-desc">University, college, or post-study work rights</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q1','family',this)">
+        <span class="answer-card-title">Join or live with family</span>
+        <span class="answer-card-desc">Spouse, partner, dependent child or parent</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q1','business',this)">
+        <span class="answer-card-title">Start or grow a business</span>
+        <span class="answer-card-desc">Launch a startup, invest, or bring my business to the UK</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" id="btn-q1-next" disabled onclick="goToQ2()">Next</button>
+      <button class="btn-back" onclick="goTo('screen-intro')">Back</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Q2 Work -->
+  <div class="screen" id="screen-q2-work">
+    <p class="q-eyebrow">Question 2 of 3</p>
+    <h2 class="q-title">Do you have a job offer from a UK employer?</h2>
+    <div class="answers" id="answers-q2-work">
+      <div class="answer-card" onclick="selectAnswer('q2w','offer',this)">
+        <span class="answer-card-title">Yes — I have a confirmed offer</span>
+        <span class="answer-card-desc">The employer is willing to sponsor my visa</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q2w','talent',this)">
+        <span class="answer-card-title">No — but I have an exceptional track record</span>
+        <span class="answer-card-desc">I'm a recognised expert in tech, science, arts, or academia</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q2w','hpi',this)">
+        <span class="answer-card-title">No — but I graduated from a top global university</span>
+        <span class="answer-card-desc">In the last 5 years, from a qualifying university</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" id="btn-q2w-next" disabled onclick="goToQ3('work')">Next</button>
+      <button class="btn-back" onclick="goTo('screen-q1')">Back</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Q2 Study -->
+  <div class="screen" id="screen-q2-study">
+    <p class="q-eyebrow">Question 2 of 3</p>
+    <h2 class="q-title">Are you currently in the UK on a Student visa?</h2>
+    <div class="answers" id="answers-q2-study">
+      <div class="answer-card" onclick="selectAnswer('q2s','graduate',this)">
+        <span class="answer-card-title">Yes — I've completed my degree</span>
+        <span class="answer-card-desc">I want to stay and work or look for work after graduating</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q2s','newstudent',this)">
+        <span class="answer-card-title">No — I want to study in the UK</span>
+        <span class="answer-card-desc">I've received or am applying for a university or college offer</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" id="btn-q2s-next" disabled onclick="goToQ3('study')">Next</button>
+      <button class="btn-back" onclick="goTo('screen-q1')">Back</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Q2 Family -->
+  <div class="screen" id="screen-q2-family">
+    <p class="q-eyebrow">Question 2 of 3</p>
+    <h2 class="q-title">What is your relationship to the person in the UK?</h2>
+    <div class="answers" id="answers-q2-family">
+      <div class="answer-card" onclick="selectAnswer('q2f','spouse',this)">
+        <span class="answer-card-title">Spouse or unmarried partner</span>
+        <span class="answer-card-desc">My partner is a British citizen or settled person in the UK</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q2f','dependent',this)">
+        <span class="answer-card-title">Dependent child or parent</span>
+        <span class="answer-card-desc">I want to join a family member who is already settled</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" id="btn-q2f-next" disabled onclick="goToQ3('family')">Next</button>
+      <button class="btn-back" onclick="goTo('screen-q1')">Back</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Q2 Business -->
+  <div class="screen" id="screen-q2-business">
+    <p class="q-eyebrow">Question 2 of 3</p>
+    <h2 class="q-title">What stage is your business or venture?</h2>
+    <div class="answers" id="answers-q2-business">
+      <div class="answer-card" onclick="selectAnswer('q2b','innovator',this)">
+        <span class="answer-card-title">Early stage — I have a viable business idea</span>
+        <span class="answer-card-desc">My concept is innovative and scalable</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q2b','talent_biz',this)">
+        <span class="answer-card-title">I'm a recognised leader in my industry</span>
+        <span class="answer-card-desc">I've been endorsed or have a strong professional portfolio</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" id="btn-q2b-next" disabled onclick="goToQ3('business')">Next</button>
+      <button class="btn-back" onclick="goTo('screen-q1')">Back</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Q3 (previously applied / refusal) -->
+  <div class="screen" id="screen-q3">
+    <p class="q-eyebrow">Question 3 of 3</p>
+    <h2 class="q-title">Have you ever had a UK visa application refused?</h2>
+    <div class="answers" id="answers-q3">
+      <div class="answer-card" onclick="selectAnswer('q3','no',this)">
+        <span class="answer-card-title">No — this is my first application</span>
+        <span class="answer-card-desc">I have no previous UK visa refusals</span>
+      </div>
+      <div class="answer-card" onclick="selectAnswer('q3','yes',this)">
+        <span class="answer-card-title">Yes — I was refused before</span>
+        <span class="answer-card-desc">I want to apply again or understand my options</span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-primary" id="btn-q3-next" disabled onclick="showResult()">See my result</button>
+      <button class="btn-back" id="btn-q3-back">Back</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Result -->
+  <div class="screen" id="screen-result">
+    <p class="result-eyebrow">Your recommended visa path</p>
+    <h2 class="result-visa" id="result-visa-name">Skilled Worker Visa</h2>
+    <div class="result-divider"></div>
+    <p class="result-description" id="result-description"></p>
+    <div class="result-requirements">
+      <p class="result-req-label">What you typically need</p>
+      <ul class="result-req-list" id="result-req-list"></ul>
+    </div>
+    <a class="btn-whatsapp" id="whatsapp-btn" href="#" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+      Book a free consultation on WhatsApp
+    </a>
+    <button class="btn-restart" onclick="restartQuiz()">Start again</button>
+    <p class="result-disclaimer">This tool provides general guidance only. It does not constitute legal advice. Visa eligibility depends on your individual circumstances. Lace Law LLP is authorised and regulated by the OISC.</p>
+  </div>
+
+  <!-- Footer -->
+  <footer class="quiz-footer">
+    <span class="footer-text">Lace Law LLP</span>
+    <a href="https://lacelaw.co.uk" class="footer-link" target="_blank">lacelaw.co.uk</a>
+  </footer>
+
+</div>
+
+<script>
+  // ── State ──
+  const state = { q1: null, q2: null, q3: null, q2track: null };
+
+  // ── WhatsApp number — actualizado ──
+  const WHATSAPP_NUMBER = '447493163172';
+
+  // ── Visa result map ──
+  const RESULTS = {
+    // Work
+    'work-offer': {
+      name: 'Skilled Worker Visa',
+      description: 'The Skilled Worker visa lets you live and work in the UK for an approved employer. Your employer must hold a valid sponsor licence. This is the most common route for professionals moving to the UK for work.',
+      requirements: [
+        'A confirmed job offer from a UK-licensed sponsor',
+        'The role must meet the minimum salary threshold',
+        'Certificate of Sponsorship from your employer',
+        'English language requirement (B1 level)',
+        'Financial requirement (savings or employer-covered)',
+      ]
+    },
+    'work-talent': {
+      name: 'Global Talent Visa',
+      description: 'For recognised leaders and potential leaders in digital technology, science, engineering, arts, or academia. No job offer required — you need an endorsement from an approved body.',
+      requirements: [
+        'Endorsement from a recognised body (e.g. Tech Nation, The Royal Society)',
+        'Evidence of exceptional talent or exceptional promise',
+        'No minimum salary or sponsor required',
+        'No cap on numbers',
+      ]
+    },
+    'work-hpi': {
+      name: 'High Potential Individual (HPI) Visa',
+      description: 'Designed for recent graduates from top-ranked global universities. No job offer needed — it gives you 2 years to work, look for work, or explore opportunities in the UK.',
+      requirements: [
+        'Degree from a qualifying top-50 global university (in the last 5 years)',
+        'No job offer required',
+        'Financial requirement (savings)',
+        'English language at B1 level or above',
+      ]
+    },
+    // Study
+    'study-graduate': {
+      name: 'Graduate Visa',
+      description: 'If you\'ve completed a degree in the UK, the Graduate visa lets you stay for 2 years (or 3 if you completed a PhD) to work or look for work — with no restrictions on the type of job.',
+      requirements: [
+        'Completed a UK degree (bachelor\'s, master\'s, or PhD)',
+        'Your university must be a licensed student sponsor',
+        'Must apply before your Student visa expires',
+        'Financial requirement (savings)',
+      ]
+    },
+    'study-newstudent': {
+      name: 'Student Visa',
+      description: 'The Student visa allows you to study at a UK university or college. You can also work part-time (up to 20 hours per week) during your studies.',
+      requirements: [
+        'Unconditional offer from a licensed UK educational institution',
+        'Confirmation of Acceptance for Studies (CAS)',
+        'Proof of English proficiency (IELTS or equivalent)',
+        'Financial requirement (tuition + living costs)',
+      ]
+    },
+    // Family
+    'family-spouse': {
+      name: 'Spouse / Partner Visa',
+      description: 'This visa allows you to join your British citizen or settled partner in the UK. You can live, work, and study — and apply for Indefinite Leave to Remain after 5 years.',
+      requirements: [
+        'Your partner must be a British citizen or have settled status',
+        'Genuine relationship — you must have met in person',
+        'Financial requirement: partner earns minimum £29,000/year',
+        'English language requirement (A2 level)',
+        'Accommodation requirement',
+      ]
+    },
+    'family-dependent': {
+      name: 'Dependent / Family Visa',
+      description: 'For children, parents, or other family members who want to join a person already settled or living in the UK. The specific rules depend on your relationship and the sponsor\'s immigration status.',
+      requirements: [
+        'The sponsor must be settled or have leave in the UK',
+        'Proof of the family relationship',
+        'Financial requirement (sponsor\'s income)',
+        'Accommodation requirement',
+      ]
+    },
+    // Business
+    'business-innovator': {
+      name: 'Innovator Founder Visa',
+      description: 'For entrepreneurs who want to set up and run an innovative business in the UK. Your business idea must be endorsed by an approved endorsing body as innovative, viable, and scalable.',
+      requirements: [
+        'Endorsement from an approved endorsing body',
+        'A genuine, innovative, and scalable business idea',
+        'At least £50,000 investment funds (in some cases)',
+        'English language requirement (B2 level)',
+      ]
+    },
+    'business-talent_biz': {
+      name: 'Global Talent Visa',
+      description: 'If you\'re an established leader in your field — tech, finance, creative industries — the Global Talent visa gives you full flexibility to work, build, or invest in the UK without an employer sponsor.',
+      requirements: [
+        'Endorsement from an approved body in your sector',
+        'Strong evidence of exceptional talent or promise',
+        'No job offer or minimum salary required',
+        'Flexible: work for multiple employers or set up a business',
+      ]
+    },
+  };
+
+  // ── Helpers ──
+  function goTo(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function selectAnswer(qKey, value, el) {
+    const container = el.parentElement;
+    container.querySelectorAll('.answer-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    state[qKey] = value;
+    // Enable next button
+    const btnMap = { q1:'btn-q1-next', q2w:'btn-q2w-next', q2s:'btn-q2s-next', q2f:'btn-q2f-next', q2b:'btn-q2b-next', q3:'btn-q3-next' };
+    if (btnMap[qKey]) document.getElementById(btnMap[qKey]).disabled = false;
+  }
+
+  function updateProgress(step, total) {
+    const wrap = document.getElementById('progressWrap');
+    wrap.classList.add('visible');
+    document.getElementById('progressLabel').textContent = `Question ${step} of ${total}`;
+    document.getElementById('progressFill').style.width = `${(step / total) * 100}%`;
+  }
+
+  function startQuiz() {
+    goTo('screen-q1');
+    updateProgress(1, 3);
+  }
+
+  function goToQ2() {
+    state.q2track = state.q1;
+    const q2screens = { work:'screen-q2-work', study:'screen-q2-study', family:'screen-q2-family', business:'screen-q2-business' };
+    goTo(q2screens[state.q1]);
+    updateProgress(2, 3);
+  }
+
+  function goToQ3(track) {
+    state.q2track = track;
+    const backMap = { work:'screen-q2-work', study:'screen-q2-study', family:'screen-q2-family', business:'screen-q2-business' };
+    document.getElementById('btn-q3-back').onclick = () => goTo(backMap[track]);
+    goTo('screen-q3');
+    updateProgress(3, 3);
+  }
+
+  function showResult() {
+    // Build result key
+    const keyMap = {
+      work: { offer:'work-offer', talent:'work-talent', hpi:'work-hpi' },
+      study: { graduate:'study-graduate', newstudent:'study-newstudent' },
+      family: { spouse:'family-spouse', dependent:'family-dependent' },
+      business: { innovator:'business-innovator', talent_biz:'business-talent_biz' },
+    };
+    const resultKey = keyMap[state.q2track]?.[state.q2] || 'work-offer';
+    const result = RESULTS[resultKey];
+
+    // Populate
+    document.getElementById('result-visa-name').textContent = result.name;
+    document.getElementById('result-description').textContent = result.description;
+
+    const reqList = document.getElementById('result-req-list');
+    reqList.innerHTML = '';
+    result.requirements.forEach(r => {
+      const li = document.createElement('li');
+      li.textContent = r;
+      reqList.appendChild(li);
+    });
+
+    // Refusal flag — add note
+    if (state.q3 === 'yes') {
+      document.getElementById('result-description').textContent += ' Given a previous refusal, it is especially important to address the reasons for that decision in your new application. Legal advice is strongly recommended.';
+    }
+
+    // WhatsApp link
+    const visaName = result.name;
+    const msg = encodeURIComponent(`Hello, I completed the Lace Law visa checker and it suggested the ${visaName}. I'd like to book a free consultation.`);
+    document.getElementById('whatsapp-btn').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
+
+    // Hide progress
+    document.getElementById('progressWrap').classList.remove('visible');
+    document.getElementById('progressFill').style.width = '100%';
+
+    goTo('screen-result');
+  }
+
+  function restartQuiz() {
+    state.q1 = null; state.q2 = null; state.q3 = null; state.q2track = null;
+    // Reset selected cards
+    document.querySelectorAll('.answer-card').forEach(c => c.classList.remove('selected'));
+    // Reset buttons
+    ['btn-q1-next','btn-q2w-next','btn-q2s-next','btn-q2f-next','btn-q2b-next','btn-q3-next'].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
+    document.getElementById('progressWrap').classList.remove('visible');
+    document.getElementById('progressFill').style.width = '0%';
+    goTo('screen-intro');
+  }
+</script>
+
+</body>
+</html>
